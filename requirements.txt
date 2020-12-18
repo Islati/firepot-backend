@@ -1,0 +1,9 @@
+flask
+flask_cors
+flask_hashing
+flask_migrate
+flask_sqlalchemy
+psycopg2_binary
+gunicorn
+pyjwt
+nose

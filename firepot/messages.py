@@ -1,0 +1,7 @@
+AUTH_NO_EMAIL_PROVIDED = "No email has been provided."
+AUTH_NO_NAME_PROVIDED = "No name has been provided."
+AUTH_NO_PASSWORD_PROVIDED = "No password was provided."
+AUTH_EMAIL_CLAIMED_PREVIOUSLY = "This email has already been claimed. Try another one."
+AUTH_REGISTRATION_SUCCESSFUL = "Registration Successful"
+AUTH_LOGIN_FAILED = "Login Failed. Check your email & password then try again."
+AUTH_LOGIN_SUCCESS = "Login Successful."
