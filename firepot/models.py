@@ -4,6 +4,46 @@ from firepot.database import SurrogatePK, SqlModel, Column, relationship
 from firepot.extensions import db, hashing
 
 
+class Image(SurrogatePK, SqlModel):
+    __tablename__ = "image"
+
+    name = db.Column(db.Text, unique=True)
+    data = db.Column(db.Text)
+
+    def __init__(self, name, data):
+        super().__init__(
+            name=name,
+            data=data
+        )
+
+
+class Item(SurrogatePK, SqlModel):
+    __tablename__ = "item"
+
+    name = db.Column(db.Text)
+    description = db.Column(db.Text)
+
+    cover_image_id = db.Column(db.Integer, nullable=False)
+    images = relationship("Image", backref=db.backref('item', cascade="all,delete"), lazy=True, uselist=True)
+
+    def __init__(self, name, description, cover_image_id, images):
+        super().__init__(
+            name=name,
+            description=description,
+            cover_image_id=cover_image_id,
+            images=images
+        )
+
+
+class Tag(SurrogatePK, SqlModel):
+    __tablename__ = "tags"
+
+    name = db.Column(db.Text, unique=True)
+
+    def __init__(self, name):
+        super().__init__(name=name)
+
+
 class UserPermissions(SurrogatePK, SqlModel):
     """
     Handles the link between users and permissions
@@ -16,6 +56,12 @@ class UserPermissions(SurrogatePK, SqlModel):
 
     user = relationship("User", back_populates="permissions")
     permission = relationship("Permission", back_populates="users")
+
+    def __init__(self, user, permission):
+        super().__init__(
+            user=user,
+            permission=permission
+        )
 
 
 class Permission(SurrogatePK, SqlModel):
