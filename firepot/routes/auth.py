@@ -52,7 +52,7 @@ def register():
     if email is None:
         return error_message(messages.AUTH_NO_EMAIL_PROVIDED)
 
-    if first_name is None or last_name:
+    if first_name is None or last_name is None:
         return error_message(messages.AUTH_NO_NAME_PROVIDED)
 
     if password is None:

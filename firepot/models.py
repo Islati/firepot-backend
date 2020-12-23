@@ -10,7 +10,7 @@ class Image(SurrogatePK, SqlModel):
     name = db.Column(db.Text, unique=True)
     data = db.Column(db.Text)
 
-    item_id = db.Column(db.Integer,db.ForeignKey("item.id"))
+    item_id = db.Column(db.Integer, db.ForeignKey("item.id"))
 
     def __init__(self, name, data):
         super().__init__(
@@ -29,12 +29,15 @@ class Product(SurrogatePK, SqlModel):
     cost = db.Column(db.Integer, nullable=False)
     sale_cost = db.Column(db.Integer, nullable=True, default=0)
 
-    def __init__(self,name, item_id, cost, sale_cost=0):
+    stock = db.Column(db.Integer,nullable=True,default=0)
+
+    def __init__(self, name, item_id, cost, sale_cost=0,stock=0):
         super().__init__(
             name=name,
             item_id=item_id,
             cost=cost,
-            sale_cost=sale_cost
+            sale_cost=sale_cost,
+            stock=stock
         )
 
 

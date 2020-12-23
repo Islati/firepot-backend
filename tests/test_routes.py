@@ -13,7 +13,9 @@ class TestApplicationRoutes(TestCase):
         name = self.register(first_name=first_name, last_name=last_name, email=email, password=password)
 
         token, id = self.login(email=email, password=password)
-        pass
+        self.assertEqual(id, decode_auth_token(token)['sub'])
+
+        return token
 
     def register(self, first_name, last_name, email, password):
         data = dict(
@@ -23,13 +25,18 @@ class TestApplicationRoutes(TestCase):
             password=password
         )
 
-        request = self.app.test_client().post('/auth/regster/', data=json.dumps(json), follow_redirects=True,
+        print("Sending with: {0}".format(json.dumps(data)))
+
+        request = self.app.test_client().post('/auth/register/', data=json.dumps(data), follow_redirects=True,
                                               content_type='application/json')
+
+        print(request.data)
+
         _json = json.loads(request.data)
 
-        self.assertEqual(_json['status'], 'success', msg=_json['msg'])
+        self.assertEqual(_json['status'], 'success', msg=_json['message'])
 
-        return _json['name']
+        return _json['payload']['name']
 
     def login(self, email, password):
         """
@@ -48,11 +55,24 @@ class TestApplicationRoutes(TestCase):
                                               content_type='application/json')
         _json = json.loads(request.data)
 
-        self.assertEqual(_json['status'], 'success', msg=_json['msg'])
+        self.assertEqual(_json['status'], 'success', msg=_json['message'])
 
-        token = _json['auth']
-        id = _json['id']
+        token = _json['payload']['auth']
+        id = _json['payload']['id']
         return token, id
 
     def test_login_and_register(self):
-        auth_token = self.register_and_login()
+        from firepot.models import User
+        auth_token = self.register_and_login(first_name="B", last_name="C", email="test@firepot.ca", password="testing")
+
+        self.assertIsNotNone(auth_token)
+
+        decoded = decode_auth_token(auth_token)
+
+        self.assertIsNot(decoded, False)
+
+        self.assertEqual(decoded['sub'], User.query.filter_by(email="test@firepot.ca").first().id)
+
+    def test_products_list(self):
+        token = self.register_and_login(first_name="B", last_name="C", email="test@firepot.ca", password="testing")
+        req = self.app.test_client().get("/store/products", headers={'Authorization': 'Bearer {0}'.format(token)})
