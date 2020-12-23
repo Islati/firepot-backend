@@ -8,7 +8,7 @@ class Config(object):
 
     LOG_FOLDER = os.path.expanduser(os.path.join(BASE_FOLDER, "data/logs/"))
 
-    SQLALCHEMY_DATABASE_URI = "postgresql://postgres:gethigh@localhost/levelmc"
+    SQLALCHEMY_DATABASE_URI = "postgresql://brandon:testing@localhost/brandon"
 
     DEBUG_ADMIN_AUTHORIZATION_BEARER = "jb0pcwCutK"
     DEBUG_USER_AUTHORIZATION_BEARER = "ZxHtrwpS7K"

@@ -10,11 +10,39 @@ class Image(SurrogatePK, SqlModel):
     name = db.Column(db.Text, unique=True)
     data = db.Column(db.Text)
 
+    item_id = db.Column(db.Integer,db.ForeignKey("item.id"))
+
     def __init__(self, name, data):
         super().__init__(
             name=name,
             data=data
         )
+
+
+class Product(SurrogatePK, SqlModel):
+    __tablename__ = "products"
+
+    name = db.Column(db.Text, nullable=False)
+
+    item_id = db.Column(db.Integer, db.ForeignKey("item.id"))
+
+    cost = db.Column(db.Integer, nullable=False)
+    sale_cost = db.Column(db.Integer, nullable=True, default=0)
+
+    def __init__(self,name, item_id, cost, sale_cost=0):
+        super().__init__(
+            name=name,
+            item_id=item_id,
+            cost=cost,
+            sale_cost=sale_cost
+        )
+
+
+item_tags_table = db.Table(
+    'item_tags',
+    db.Column('item_id', db.Integer, db.ForeignKey('item.id')),
+    db.Column('tag_id', db.Integer, db.ForeignKey('tags.id'))
+)
 
 
 class Item(SurrogatePK, SqlModel):
@@ -23,15 +51,18 @@ class Item(SurrogatePK, SqlModel):
     name = db.Column(db.Text)
     description = db.Column(db.Text)
 
-    cover_image_id = db.Column(db.Integer, nullable=False)
+    cover_image_id = db.Column(db.Integer, nullable=True, default=-1)
     images = relationship("Image", backref=db.backref('item', cascade="all,delete"), lazy=True, uselist=True)
+    tags = relationship('Tag', backref=db.backref("tag", lazy="joined"), lazy=True, uselist=True,
+                        secondary=item_tags_table)
 
-    def __init__(self, name, description, cover_image_id, images):
+    def __init__(self, name, description, cover_image_id, images, tags):
         super().__init__(
             name=name,
             description=description,
             cover_image_id=cover_image_id,
-            images=images
+            images=images,
+            tags=tags
         )
 
 
@@ -39,6 +70,8 @@ class Tag(SurrogatePK, SqlModel):
     __tablename__ = "tags"
 
     name = db.Column(db.Text, unique=True)
+
+    items = relationship('Item', secondary=item_tags_table, back_populates="tags")
 
     def __init__(self, name):
         super().__init__(name=name)
@@ -98,7 +131,7 @@ class User(SurrogatePK, SqlModel):
 
     def __init__(self, first_name, last_name, email, password):
         salt_code = str(uuid4()).strip('-')  # generated saltcode
-        hashed_password = hashing.hash_value(password, salt=self.salt_code)
+        hashed_password = hashing.hash_value(password, salt_code)
 
         super().__init__(
             first_name=first_name,
