@@ -18,6 +18,12 @@ class Image(SurrogatePK, SqlModel):
             data=data
         )
 
+    def to_dict(self):
+        return dict(
+            name=self.name,
+            data=self.data
+        )
+
 
 class Product(SurrogatePK, SqlModel):
     __tablename__ = "products"
@@ -25,13 +31,14 @@ class Product(SurrogatePK, SqlModel):
     name = db.Column(db.Text, nullable=False)
 
     item_id = db.Column(db.Integer, db.ForeignKey("item.id"))
+    # item = relationship("Item",backref=db.backref("products")
 
     cost = db.Column(db.Integer, nullable=False)
     sale_cost = db.Column(db.Integer, nullable=True, default=0)
 
-    stock = db.Column(db.Integer,nullable=True,default=0)
+    stock = db.Column(db.Integer, nullable=True, default=0)
 
-    def __init__(self, name, item_id, cost, sale_cost=0,stock=0):
+    def __init__(self, name, item_id, cost, sale_cost=0, stock=0):
         super().__init__(
             name=name,
             item_id=item_id,
@@ -39,6 +46,17 @@ class Product(SurrogatePK, SqlModel):
             sale_cost=sale_cost,
             stock=stock
         )
+
+    def to_dict(self):
+        return dict(
+            name=self.name,
+            item_id=self.item_id,
+            cost=self.cost,
+            sale_cost=self.sale_cost
+        )
+
+    def get_item(self):
+        return Item.query.filter_by(id=self.item_id).first()
 
 
 item_tags_table = db.Table(
@@ -68,6 +86,16 @@ class Item(SurrogatePK, SqlModel):
             tags=tags
         )
 
+    def to_dict(self):
+        return dict(
+            id=self.id,
+            name=self.name,
+            description=self.description,
+            cover_image_id=self.cover_image_id,
+            images=[img.to_dict() for img in self.images],
+            tags=[tag.to_dict() for tag in self.tags]
+        )
+
 
 class Tag(SurrogatePK, SqlModel):
     __tablename__ = "tags"
@@ -78,6 +106,12 @@ class Tag(SurrogatePK, SqlModel):
 
     def __init__(self, name):
         super().__init__(name=name)
+
+    def to_dict(self):
+        return dict(
+            id=self.id,
+            name=self.name
+        )
 
 
 class UserPermissions(SurrogatePK, SqlModel):
@@ -149,3 +183,12 @@ class User(SurrogatePK, SqlModel):
 
     def check_password(self, password):
         return hashing.check_value(self.password, password, self.salt_code)
+
+    def has_permissions(self,node):
+        for perm in self.permissions:
+            if perm.permission.node != node:
+                continue
+
+            return True
+
+        return False

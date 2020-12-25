@@ -69,9 +69,10 @@ def configure_logging(app):
 
 
 def register_blueprints(app):
-    from firepot.routes import auth_blueprint
+    from firepot.routes import auth_blueprint, store_blueprint
 
     app.register_blueprint(auth_blueprint)
+    app.register_blueprint(store_blueprint)
 
 
 def configure_extensions(app):

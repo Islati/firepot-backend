@@ -12,8 +12,13 @@ import math
 from firepot.config import Config
 from firepot.models import User
 
+import base64
+
 LOGGER = logging.getLogger(__name__)
 
+def base64_encode_image(input):
+    image_string = base64.b64encode(input.read())
+    return image_string
 
 def payload(msg, payload, status="success"):
     return jsonify({
@@ -83,7 +88,7 @@ def admins_only(api_method):
                 'message': 'Unable to identify user'
             }), 401
 
-        if not user.has_permission('skreet.administration'):
+        if not user.has_permission('firepot.administration'):
             LOGGER.debug("Admin Only:: Insufficient Permissions")
             return jsonify({
                 'status': 'error',

@@ -74,5 +74,42 @@ class TestApplicationRoutes(TestCase):
         self.assertEqual(decoded['sub'], User.query.filter_by(email="test@firepot.ca").first().id)
 
     def test_products_list(self):
+        from firepot.models import Item, Product, Image, Tag
         token = self.register_and_login(first_name="B", last_name="C", email="test@firepot.ca", password="testing")
         req = self.app.test_client().get("/store/products", headers={'Authorization': 'Bearer {0}'.format(token)})
+
+        _json = json.loads(req.data)
+
+        self.assertEqual(_json['message'], "Currently no stock available")
+
+        silver_haze_img = Image(name="silver_haze_1", data="Base64 of super silver haze bb")
+        silver_haze_img.save(commit=True)
+
+        self.assertIsNotNone(Image.query.filter_by(name="silver_haze_1").first())
+
+        sativa_tag = Tag(name="Sativa")
+        sativa_tag.save(commit=True)
+
+        self.assertIsNotNone(Tag.query.filter_by(name="Sativa").first())
+
+        silver_haze = Item(name="Super Silver Haze", description="Epic Sativa AAAA Exotic level",
+                           cover_image_id=silver_haze_img.id, images=[silver_haze_img], tags=[sativa_tag])
+
+        silver_haze.save(commit=True)
+
+        self.assertIsNotNone(Item.query.filter_by(name="Super Silver Haze").first())
+
+        product = Product(name="Super Silver Haze (1g)", item_id=silver_haze.id, cost=10, stock=28)
+        product.save(commit=True)
+
+        self.assertGreaterEqual(len(Product.query.filter_by(item_id=silver_haze.id).all()), 1)
+
+        req = self.app.test_client().get("/store/products", headers={'Authorization': 'Bearer {0}'.format(token)})
+
+        _json = json.loads(req.data)
+
+        self.assertEqual(_json['message'], "Store Products List")
+
+        _items = _json['payload']['items']
+
+        self.assertGreaterEqual(len(_items.keys()), 1)
