@@ -4,6 +4,16 @@ from firepot.database import SurrogatePK, SqlModel, Column, relationship
 from firepot.extensions import db, hashing
 
 
+class Cart(SqlModel):
+    __tablename__ = "carts"
+
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+
+    items = relationship("Product", backref=db.backref("carts"), uselist=True)
+
+    #todo finish cart.
+
+
 class Image(SurrogatePK, SqlModel):
     __tablename__ = "image"
 
