@@ -14,5 +14,5 @@ DUPLICATE_ITEM_NAME="An item with this name already exists"
 
 
 ITEM_CREATED = "Item created"
-ITEM_ID_DOES_NOT_EXIST = "No item with id {0}"
+INVALID_ITEM_ID = "No item with id {0}"
 PRODUCT_CREATED = "Product created!"

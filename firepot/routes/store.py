@@ -42,3 +42,16 @@ def store_products():
         return payload(msg="Store Products List", payload={
             'items': items_map
         })
+
+
+@store_blueprint.route("/item/<itemid>", methods=["GET"])
+@validate_auth_token
+def item_id(itemid):
+    item = Item.query.filter_by(id=itemid).first()
+
+    if item is None:
+        return status_message(msg=messages.INVALID_ITEM_ID, status="error")
+
+    return payload(msg="Item retrieved", payload={
+        'item': item.to_dict()
+    })

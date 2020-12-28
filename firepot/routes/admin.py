@@ -96,7 +96,7 @@ def new_inventory_item_product():
     item = Item.get_by_id(item_id)
 
     if item is None:
-        return status_message(msg=messages.ITEM_ID_DOES_NOT_EXIST, status="error")
+        return status_message(msg=messages.INVALID_ITEM_ID, status="error")
 
     product = Product.query.filter_by(name=name).first()
     if product is not None:
