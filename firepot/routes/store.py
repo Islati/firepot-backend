@@ -1,7 +1,9 @@
 from flask import Blueprint, jsonify
+
+from firepot import messages
 from firepot.utils import validate_auth_token, payload, status_message
 
-from firepot.models import Product
+from firepot.models import Product, Item
 
 store_blueprint = Blueprint(__name__, "store_blueprint", url_prefix="/store")
 
@@ -13,27 +15,30 @@ def store_products():
     Return (in json to client) all the products in stock.
     """
 
-    products = Product.query.filter(Product.stock >= 1).all()
+    items_in_stock = Item.query.filter(Item.stock >= 1).all()
 
-    if len(products) == 0:
-        return status_message(msg="Currently no stock available")
+    if len(items_in_stock) == 0:
+        return status_message(msg=messages.NO_STOCK_AVAILABLE, status="error")
 
     items_map = {}
 
-    for product in products:
-        if product.stock < 1:
+    for item in items_in_stock:
+        item_products = Product.query.filter_by(item_id=item.id).all()
+
+        if len(item_products) == 0:
             continue
 
-        _product_map = product.to_dict()
+        for product in item_products:
+            _product_map = product.to_dict()
 
-        item_id = _product_map['item_id']
+            item_id = _product_map['item_id']
 
-        if item_id not in items_map.keys():
-            items_map[item_id] = product.get_item().to_dict()
-            items_map[item_id]['products'] = list()  # Map of items.
+            if item_id not in items_map.keys():
+                items_map[item_id] = product.get_item().to_dict()
+                items_map[item_id]['products'] = list()  # Map of items.
 
-        items_map[item_id]['products'].append(product.to_dict())
+            items_map[item_id]['products'].append(product.to_dict())
 
-    return payload(msg="Store Products List", payload={
-        'items': items_map
-    })
+        return payload(msg="Store Products List", payload={
+            'items': items_map
+        })

@@ -156,7 +156,6 @@ def encode_auth_token(user_id):
             'iat': datetime.datetime.timestamp(datetime.datetime.utcnow()),
             'sub': user_id,
         }
-        print(f'User auth token expiry: {payload["exp"]}')
         token = jwt.encode(payload, Config.SECRET_KEY, algorithm='HS256')
         return token
     except Exception as e:
@@ -170,11 +169,9 @@ def decode_auth_token(token):
         return payload
     except jwt.ExpiredSignatureError as jweEs:
         # todo handle expired signature
-        print(jweEs)
         pass
     except jwt.InvalidTokenError as jweTe:
         # todo invalid token error
-        print(jweTe)
         pass
 
     return False

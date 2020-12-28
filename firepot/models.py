@@ -26,6 +26,10 @@ class Image(SurrogatePK, SqlModel):
 
 
 class Product(SurrogatePK, SqlModel):
+    """
+    Parent class to item that holds individual sale item,
+    and is grouped together in retrieving to create inventory catalog.
+    """
     __tablename__ = "products"
 
     name = db.Column(db.Text, nullable=False)
@@ -36,15 +40,15 @@ class Product(SurrogatePK, SqlModel):
     cost = db.Column(db.Integer, nullable=False)
     sale_cost = db.Column(db.Integer, nullable=True, default=0)
 
-    stock = db.Column(db.Integer, nullable=True, default=0)
+    stock_weight = db.Column(db.Integer, nullable=False, default=1)
 
-    def __init__(self, name, item_id, cost, sale_cost=0, stock=0):
+    def __init__(self, name, item_id, cost, sale_cost=0, stock_weight=1):
         super().__init__(
             name=name,
             item_id=item_id,
             cost=cost,
             sale_cost=sale_cost,
-            stock=stock
+            stock_weight=stock_weight
         )
 
     def to_dict(self):
@@ -52,7 +56,8 @@ class Product(SurrogatePK, SqlModel):
             name=self.name,
             item_id=self.item_id,
             cost=self.cost,
-            sale_cost=self.sale_cost
+            sale_cost=self.sale_cost,
+            stock_weight=self.stock_weight
         )
 
     def get_item(self):
@@ -77,13 +82,16 @@ class Item(SurrogatePK, SqlModel):
     tags = relationship('Tag', backref=db.backref("tag", lazy="joined"), lazy=True, uselist=True,
                         secondary=item_tags_table)
 
-    def __init__(self, name, description, cover_image_id, images, tags):
+    stock = db.Column(db.Integer, nullable=True, default=0)
+
+    def __init__(self, name, description, cover_image_id, images, tags, stock=1):
         super().__init__(
             name=name,
             description=description,
             cover_image_id=cover_image_id,
             images=images,
-            tags=tags
+            tags=tags,
+            stock=stock
         )
 
     def to_dict(self):
@@ -105,7 +113,8 @@ class Tag(SurrogatePK, SqlModel):
     items = relationship('Item', secondary=item_tags_table, back_populates="tags")
 
     def __init__(self, name):
-        super().__init__(name=name)
+        super(). \
+            __init__(name=name)
 
     def to_dict(self):
         return dict(

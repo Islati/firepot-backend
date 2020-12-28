@@ -1,5 +1,6 @@
 from flask import Blueprint, request
 
+from firepot import messages
 from firepot.models import Item, Product, Tag, Image
 from firepot.utils import status_message, payload, admins_only
 
@@ -23,7 +24,7 @@ def images_save():
     image = Image.query.filter_by(name=name).first()
 
     if image is not None:
-        return status_message("An image with that name already exists", status="error")
+        return status_message(messages.DUPLICATE_IMAGE_NAME, status="error")
 
     # todo verify it's base64 image data somewhere here.
 
@@ -48,12 +49,12 @@ def new_inventory_item():
     item = Item.query.filter_by(name=name).first()
 
     if item is not None:
-        return status_message('An item with this name already exists', status='error')
+        return status_message(messages.DUPLICATE_ITEM_NAME, status='error')
 
     item_image = Image.query.filter_by(name=name).first()
 
     if item_image is not None:
-        return status_message('An image with that name already exists', status='error')
+        return status_message(messages.DUPLICATE_IMAGE_NAME, status='error')
 
     tags = []
 
@@ -76,14 +77,35 @@ def new_inventory_item():
     item = Item(name=name, description=description, cover_image_id=item_image.id, images=[item_image], tags=tags)
     item.save(commit=True)
 
-    return payload(msg="Item created", payload={
+    return payload(msg=messages.ITEM_CREATED, payload={
         'item': item.to_dict()
     })
 
 
-@admin_blueprint.route('/inventory/product/new', methods=['POST'])
+@admin_blueprint.route('/inventory/product/new/', methods=['POST'])
+@admins_only
 def new_inventory_item_product():
-    pass
+    _json = request.get_json()
+
+    item_id = _json['item_id']
+    name = _json['name']
+    cost = _json['cost']
+    sale_cost = _json['sale_cost']
+    stock_weight = _json['stock_weight']
+
+    item = Item.get_by_id(item_id)
+
+    if item is None:
+        return status_message(msg=messages.ITEM_ID_DOES_NOT_EXIST, status="error")
+
+    product = Product.query.filter_by(name=name).first()
+    if product is not None:
+        return status_message(msg=messages.DUPLICATE_PRODUCT_NAME.format(name), status="error")
+
+    product = Product(name=name, item_id=item_id, cost=cost, sale_cost=sale_cost, stock_weight=stock_weight)
+    product.save(commit=True)
+
+    return payload(msg=messages.PRODUCT_CREATED, payload={'product': product.to_dict()})
 
 
 @admin_blueprint.route("/inventory/edit", methods=['POST'])

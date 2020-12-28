@@ -20,24 +20,24 @@ def login():
     password = _json['password']
 
     if email is None:
-        return error_message(messages.AUTH_NO_EMAIL_PROVIDED)
+        return error_message(messages.NO_EMAIL_PROVIDED)
 
     if password is None:
-        return error_message(messages.AUTH_NO_PASSWORD_PROVIDED)
+        return error_message(messages.NO_PASSWORD_PROVIDED)
 
     user = User.query.filter_by(email=email).first()
 
     if user is None:
-        return error_message(messages.AUTH_LOGIN_FAILED)
+        return error_message(messages.LOGIN_FAILED)
 
     if not user.check_password(password):
         # todo login log error log inform user of invalid login
 
-        return error_message(messages.AUTH_LOGIN_FAILED)
+        return error_message(messages.LOGIN_FAILED)
 
     authentication_token = encode_auth_token(user.id).decode("utf-8")
 
-    return payload(messages.AUTH_LOGIN_SUCCESS, {
+    return payload(messages.LOGIN_SUCCESS, {
         "id": user.id,
         "email": user.email,
         "name": user.first_name,
@@ -55,25 +55,25 @@ def register():
     password = _json['password']
 
     if email is None:
-        return error_message(messages.AUTH_NO_EMAIL_PROVIDED)
+        return error_message(messages.NO_EMAIL_PROVIDED)
 
     if first_name is None or last_name is None:
-        return error_message(messages.AUTH_NO_NAME_PROVIDED)
+        return error_message(messages.NO_NAME_PROVIDED)
 
     if password is None:
-        return error_message(messages.AUTH_NO_PASSWORD_PROVIDED)
+        return error_message(messages.NO_PASSWORD_PROVIDED)
 
     user = User.query.filter_by(email=email).first()
 
     if user is not None:
-        return error_message(messages.AUTH_EMAIL_CLAIMED_PREVIOUSLY)
+        return error_message(messages.EMAIL_ALREADY_CLAIMED)
 
     user = User(first_name=first_name, last_name=last_name, email=email, password=password)
     user.save(commit=True)
 
     authentication_token = encode_auth_token(user.id).decode("utf-8")
 
-    return payload(messages.AUTH_REGISTRATION_SUCCESSFUL, {
+    return payload(messages.REGISTRATION_SUCCESSFUL, {
         'auth': authentication_token,
         'name': user.first_name,
         'id': user.id
