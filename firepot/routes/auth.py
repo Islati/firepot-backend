@@ -1,10 +1,15 @@
 from flask import Blueprint, request, jsonify
 
 from firepot.models import User
-from firepot.utils import error_message, payload, encode_auth_token, decode_auth_token
+from firepot.utils import error_message, payload, encode_auth_token, decode_auth_token, validate_auth_token, status_message
 from firepot import messages
 
 auth_blueprint = Blueprint(__name__, "auth", url_prefix="/auth")
+
+@auth_blueprint.route('/',methods=['GET'])
+@validate_auth_token
+def index():
+    return status_message(msg="Welcome")
 
 
 @auth_blueprint.route("/login/", methods=['POST'])
@@ -70,5 +75,6 @@ def register():
 
     return payload(messages.AUTH_REGISTRATION_SUCCESSFUL, {
         'auth': authentication_token,
-        'name': user.first_name
+        'name': user.first_name,
+        'id': user.id
     })

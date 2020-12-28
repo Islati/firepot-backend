@@ -16,9 +16,11 @@ import base64
 
 LOGGER = logging.getLogger(__name__)
 
+
 def base64_encode_image(input):
     image_string = base64.b64encode(input.read())
     return image_string
+
 
 def payload(msg, payload, status="success"):
     return jsonify({
@@ -150,10 +152,11 @@ def validate_auth_token(api_method):
 def encode_auth_token(user_id):
     try:
         payload = {
-            'exp': datetime.datetime.utcnow() + datetime.timedelta(days=1),
-            'iat': datetime.datetime.utcnow(),
+            'exp': datetime.datetime.timestamp(datetime.datetime.utcnow() + datetime.timedelta(days=1)),
+            'iat': datetime.datetime.timestamp(datetime.datetime.utcnow()),
             'sub': user_id,
         }
+        print(f'User auth token expiry: {payload["exp"]}')
         token = jwt.encode(payload, Config.SECRET_KEY, algorithm='HS256')
         return token
     except Exception as e:
@@ -165,11 +168,13 @@ def decode_auth_token(token):
     try:
         payload = jwt.decode(token, Config.SECRET_KEY, algorithms=['HS256'])
         return payload
-    except jwt.ExpiredSignatureError:
+    except jwt.ExpiredSignatureError as jweEs:
         # todo handle expired signature
+        print(jweEs)
         pass
-    except jwt.InvalidTokenError:
+    except jwt.InvalidTokenError as jweTe:
         # todo invalid token error
+        print(jweTe)
         pass
 
     return False

@@ -114,7 +114,7 @@ class Tag(SurrogatePK, SqlModel):
         )
 
 
-class UserPermissions(SurrogatePK, SqlModel):
+class UserPermission(SqlModel):
     """
     Handles the link between users and permissions
     Each entry here is one link for the user.
@@ -129,8 +129,8 @@ class UserPermissions(SurrogatePK, SqlModel):
 
     def __init__(self, user, permission):
         super().__init__(
-            user=user,
-            permission=permission
+            user_id=user.id,
+            permission_id=permission.id
         )
 
 
@@ -142,7 +142,7 @@ class Permission(SurrogatePK, SqlModel):
 
     node = Column(db.Text, unique=True)
 
-    users = relationship("UserPermissions", back_populates="permission")
+    users = relationship("UserPermission", back_populates="permission")
 
     def __init__(self, node):
         super().__init__(
@@ -156,7 +156,7 @@ class User(SurrogatePK, SqlModel):
     """
     __tablename__ = "user"
 
-    permissions = relationship("UserPermissions", back_populates="user")
+    permissions = relationship("UserPermission", back_populates="user")
 
     salt_code = Column(db.Text, nullable=False)  # generated on model creation
 
@@ -184,7 +184,7 @@ class User(SurrogatePK, SqlModel):
     def check_password(self, password):
         return hashing.check_value(self.password, password, self.salt_code)
 
-    def has_permissions(self,node):
+    def has_permission(self, node):
         for perm in self.permissions:
             if perm.permission.node != node:
                 continue
@@ -192,3 +192,15 @@ class User(SurrogatePK, SqlModel):
             return True
 
         return False
+
+    def add_permission(self, node):
+        perm_node = Permission.query.filter_by(node=node).first()
+
+        if perm_node is None:
+            perm_node = Permission(node=node)
+            perm_node.save(commit=True)
+
+        new_user_perm = UserPermission(user=self, permission=perm_node)
+        new_user_perm.save(commit=True)
+
+        return self.has_permission(node)

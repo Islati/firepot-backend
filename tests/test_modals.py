@@ -30,6 +30,24 @@ class TestModels(TestCase):
 
         self.assertIsNotNone(user_again)
 
+    def test_user_permissions(self):
+        from firepot.models import User, UserPermission, Permission
+
+        user = self._create_user(first_name="b", last_name="c", password="testing", email="test@firepot.ca")
+
+        self.assertIsNotNone(user)
+
+        permission = Permission(node="firepot.administration")
+        permission.save(commit=True)
+
+        self.assertIsNotNone(Permission.query.filter_by(node="firepot.administration").first())
+
+        user_perm = UserPermission(user=user, permission=permission)
+        user_perm.save(commit=True)
+
+        # user.add_permission("firepot.administration")
+        self.assertTrue(user.has_permission("firepot.administration"))
+
     def test_item_and_product_creation(self):
         from firepot.models import Item, Image, Tag, Product
 

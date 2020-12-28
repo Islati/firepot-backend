@@ -1,12 +1,19 @@
 from flask import Blueprint, request
 
 from firepot.models import Item, Product, Tag, Image
-from firepot.utils import status_message, payload
+from firepot.utils import status_message, payload, admins_only
 
 admin_blueprint = Blueprint(__name__, "admin", url_prefix="/admin")
 
 
+@admin_blueprint.route('/')
+@admins_only
+def index():
+    return status_message(msg="Welcome")
+
+
 @admin_blueprint.route('/images/save', methods=['POST'])
+@admins_only
 def images_save():
     _json = request.get_json()
 
@@ -26,7 +33,8 @@ def images_save():
     return payload("Image saved", payload=dict(image_id=image.id))
 
 
-@admin_blueprint.route('/inventory/new', methods=['POST'])
+@admin_blueprint.route('/inventory/new/', methods=['POST'])
+@admins_only
 def new_inventory_item():
     _json = request.get_json()
 
@@ -56,13 +64,21 @@ def new_inventory_item():
             _tag = Tag(name=tag)
             _tag.save(commit=True)
 
+        tags.append(_tag)
+
     # todo secure image data
 
     # todo secure description
 
     item_image = Image(name=cover_image_name, data=cover_image_data)
+    item_image.save(commit=True)
 
-    item = Item(name=name, description=description, cover_image_id=)
+    item = Item(name=name, description=description, cover_image_id=item_image.id, images=[item_image], tags=tags)
+    item.save(commit=True)
+
+    return payload(msg="Item created", payload={
+        'item': item.to_dict()
+    })
 
 
 @admin_blueprint.route('/inventory/product/new', methods=['POST'])
