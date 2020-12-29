@@ -4,7 +4,49 @@ from firepot.database import SurrogatePK, SqlModel, Column, relationship
 from firepot.extensions import db, hashing
 
 
+class OrderItem(SurrogatePK, SqlModel):
+    __tablename__ = "order_items"
+
+    order_id = db.Column(db.Integer)
+    product_id = db.Column(db.Integer)
+
+    name = db.Column(db.Text)
+
+    amount = db.Column(db.Integer)
+
+    price = db.Column(db.Integer)
+
+    def __init__(self, order_id, product_id, name, amount, price):
+        super().__init__(
+            order_id=order_id,
+            product_id=product_id,
+            name=name,
+            amount=amount,
+            price=price
+        )
+
+
+class Order(SurrogatePK, SqlModel):
+    __tablename__ = "order"
+
+    user_id = db.Column(db.Integer, db.ForeignKey("user.id"))
+
+    user = relationship("User", back_populates="orders")
+
+    receipt = db.Column(db.Text, nullable=False)
+
+    def __init__(self, user_id, receipt):
+        super().__init__(
+            user_id=user_id,
+            receipt=receipt
+        )
+
+
 class CartItem(SqlModel):
+    """
+    Users cart is not an object but an array of CartItem that gets moved
+    to an order when sold.
+    """
     __tablename__ = "cart_items"
 
     user_id = db.Column(db.Integer, db.ForeignKey("user.id"), primary_key=True)
@@ -12,7 +54,7 @@ class CartItem(SqlModel):
 
     amount = db.Column(db.Integer, nullable=False, default=1)
 
-    user = relationship("User", back_populates="cart_items", uselist=True)
+    user = relationship("User", back_populates="cart_items", uselist=False)
     product = relationship("Product", backref=db.backref("carts"), uselist=True)
 
     def __init__(self, user_id, product_id, amount=1):
@@ -185,6 +227,8 @@ class User(SurrogatePK, SqlModel):
     permissions = relationship("UserPermission", back_populates="user")
 
     cart_items = relationship("CartItem", back_populates="user", uselist=True)
+
+    orders = relationship("Order", back_populates="user", uselist=True)
 
     salt_code = Column(db.Text, nullable=False)  # generated on model creation
 
