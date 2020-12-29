@@ -48,8 +48,8 @@ class TestModels(TestCase):
         # user.add_permission("firepot.administration")
         self.assertTrue(user.has_permission("firepot.administration"))
 
-    def test_item_and_product_creation(self):
-        from firepot.models import Item, Image, Tag, Product
+    def test_item_product_cart(self):
+        from firepot.models import Item, Image, Tag, Product, User
 
         item_image = Image(name="silver_haze_1", data="test_data")
         item_image.save(commit=True)
@@ -74,3 +74,16 @@ class TestModels(TestCase):
 
         self.assertIsNotNone(Product.query.filter_by(name="Super Silver Haze (1g)").first())
         self.assertGreaterEqual(len(Product.query.filter_by(name="Super Silver Haze (1g)").all()), 1)
+
+        user = User(first_name="i", last_name="g", email="test@firepot.ca", password="testing")
+        user.save(commit=True)
+
+        self.assertIsNotNone(user.cart_items)
+
+        from firepot.models import CartItem
+
+        user.cart_items.append(CartItem(user_id=user.id, product_id=silver_haze_1g.id))
+
+        user.save(commit=True)
+
+        self.assertGreaterEqual(len(CartItem.query.filter_by(user_id=user.id).all()), 1)

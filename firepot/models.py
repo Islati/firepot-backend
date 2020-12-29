@@ -4,14 +4,19 @@ from firepot.database import SurrogatePK, SqlModel, Column, relationship
 from firepot.extensions import db, hashing
 
 
-class Cart(SqlModel):
-    __tablename__ = "carts"
+class CartItem(SqlModel):
+    __tablename__ = "cart_items"
 
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    user_id = db.Column(db.Integer, db.ForeignKey("user.id"), primary_key=True)
+    product_id = db.Column(db.Integer, db.ForeignKey("products.id"), primary_key=True)
 
-    items = relationship("Product", backref=db.backref("carts"), uselist=True)
+    amount = db.Column(db.Integer, nullable=False, default=1)
 
-    #todo finish cart.
+    user = relationship("User", back_populates="cart_items", uselist=True)
+    product = relationship("Product", backref=db.backref("carts"), uselist=True)
+
+    def __init__(self, user_id, product_id, amount=1):
+        super().__init__(user_id=user_id, product_id=product_id, amount=amount)
 
 
 class Image(SurrogatePK, SqlModel):
@@ -45,7 +50,7 @@ class Product(SurrogatePK, SqlModel):
     name = db.Column(db.Text, nullable=False)
 
     item_id = db.Column(db.Integer, db.ForeignKey("item.id"))
-    # item = relationship("Item",backref=db.backref("products")
+    item = relationship("Item")
 
     cost = db.Column(db.Integer, nullable=False)
     sale_cost = db.Column(db.Integer, nullable=True, default=0)
@@ -93,6 +98,8 @@ class Item(SurrogatePK, SqlModel):
                         secondary=item_tags_table)
 
     stock = db.Column(db.Integer, nullable=True, default=0)
+
+    products = relationship("Product", back_populates="item", lazy="dynamic", uselist=True)
 
     def __init__(self, name, description, cover_image_id, images, tags, stock=1):
         super().__init__(
@@ -176,6 +183,8 @@ class User(SurrogatePK, SqlModel):
     __tablename__ = "user"
 
     permissions = relationship("UserPermission", back_populates="user")
+
+    cart_items = relationship("CartItem", back_populates="user", uselist=True)
 
     salt_code = Column(db.Text, nullable=False)  # generated on model creation
 
