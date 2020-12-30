@@ -80,10 +80,15 @@ class TestModels(TestCase):
 
         self.assertIsNotNone(user.cart_items)
 
-        from firepot.models import CartItem
+        from firepot.models import CartItem, Order
 
         user.cart_items.append(CartItem(user_id=user.id, product_id=silver_haze_1g.id))
 
         user.save(commit=True)
 
         self.assertGreaterEqual(len(CartItem.query.filter_by(user_id=user.id).all()), 1)
+
+        user.save_cart_as_order()
+
+        self.assertEqual(len(user.cart_items),0)
+        self.assertIsNotNone(Order.query.filter_by(user_id=user.id).first())

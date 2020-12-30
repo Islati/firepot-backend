@@ -7,8 +7,8 @@ from firepot.extensions import db, hashing
 class OrderItem(SurrogatePK, SqlModel):
     __tablename__ = "order_items"
 
-    order_id = db.Column(db.Integer)
-    product_id = db.Column(db.Integer)
+    order_id = db.Column(db.Integer, db.ForeignKey("order.id"))
+    product_id = db.Column(db.Integer, db.ForeignKey("products.id"))
 
     name = db.Column(db.Text)
 
@@ -31,14 +31,17 @@ class Order(SurrogatePK, SqlModel):
 
     user_id = db.Column(db.Integer, db.ForeignKey("user.id"))
 
-    user = relationship("User", back_populates="orders")
+    items = relationship("OrderItem", backref=db.backref('order'), uselist=True, lazy=True)
 
-    receipt = db.Column(db.Text, nullable=False)
-
-    def __init__(self, user_id, receipt):
+    def __init__(self, user_id):
         super().__init__(
             user_id=user_id,
-            receipt=receipt
+        )
+
+    def add_item(self, cart_item):
+        self.items.append(
+            OrderItem(self.id, cart_item.product_id, f'{cart_item.product.item.name} {cart_item.product.name}',
+                      cart_item.amount, cart_item.product.get_cost())
         )
 
 
@@ -49,16 +52,25 @@ class CartItem(SqlModel):
     """
     __tablename__ = "cart_items"
 
+    id = db.Column(db.Integer, autoincrement=True, primary_key=True)
+
     user_id = db.Column(db.Integer, db.ForeignKey("user.id"), primary_key=True)
     product_id = db.Column(db.Integer, db.ForeignKey("products.id"), primary_key=True)
 
     amount = db.Column(db.Integer, nullable=False, default=1)
 
     user = relationship("User", back_populates="cart_items", uselist=False)
-    product = relationship("Product", backref=db.backref("carts"), uselist=True)
+    product = relationship("Product", backref=db.backref("carts"), uselist=False)
 
     def __init__(self, user_id, product_id, amount=1):
         super().__init__(user_id=user_id, product_id=product_id, amount=amount)
+
+    def to_dict(self):
+        return dict(
+            user_id=self.user_id,
+            product_id=self.product_id,
+            amount=self.amount
+        )
 
 
 class Image(SurrogatePK, SqlModel):
@@ -92,7 +104,7 @@ class Product(SurrogatePK, SqlModel):
     name = db.Column(db.Text, nullable=False)
 
     item_id = db.Column(db.Integer, db.ForeignKey("item.id"))
-    item = relationship("Item")
+    item = relationship("Item", uselist=False)
 
     cost = db.Column(db.Integer, nullable=False)
     sale_cost = db.Column(db.Integer, nullable=True, default=0)
@@ -119,6 +131,13 @@ class Product(SurrogatePK, SqlModel):
 
     def get_item(self):
         return Item.query.filter_by(id=self.item_id).first()
+
+    def get_cost(self):
+        """
+        Returns the lowest number of the two defined cost values for this.
+        :return:
+        """
+        return self.sale_cost if 0 < self.sale_cost < self.cost else self.cost
 
 
 item_tags_table = db.Table(
@@ -228,7 +247,7 @@ class User(SurrogatePK, SqlModel):
 
     cart_items = relationship("CartItem", back_populates="user", uselist=True)
 
-    orders = relationship("Order", back_populates="user", uselist=True)
+    orders = relationship("Order", backref=db.backref("user"), uselist=True)
 
     salt_code = Column(db.Text, nullable=False)  # generated on model creation
 
@@ -276,3 +295,14 @@ class User(SurrogatePK, SqlModel):
         new_user_perm.save(commit=True)
 
         return self.has_permission(node)
+
+    def save_cart_as_order(self):
+        order = Order(self.id)
+
+        for cart_item in self.cart_items:
+            order.add_item(cart_item)
+            cart_item.delete()
+
+        order.save(commit=True)
+
+        self.save(commit=True)
