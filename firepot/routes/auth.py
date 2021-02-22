@@ -1,12 +1,14 @@
 from flask import Blueprint, request, jsonify
 
 from firepot.models import User
-from firepot.utils import error_message, payload, encode_auth_token, decode_auth_token, validate_auth_token, status_message
+from firepot.utils import error_message, payload, encode_auth_token, decode_auth_token, validate_auth_token, \
+    status_message
 from firepot import messages
 
 auth_blueprint = Blueprint(__name__, "auth", url_prefix="/auth")
 
-@auth_blueprint.route('/',methods=['GET'])
+
+@auth_blueprint.route('/', methods=['GET'])
 @validate_auth_token
 def index():
     return status_message(msg="Welcome")
@@ -35,13 +37,17 @@ def login():
 
         return error_message(messages.LOGIN_FAILED)
 
-    authentication_token = encode_auth_token(user.id).decode("utf-8")
+    try:
+        authentication_token = encode_auth_token(user.id).decode("utf-8")
+    except:
+        authentication_token = encode_auth_token(user.id)
 
     return payload(messages.LOGIN_SUCCESS, {
         "id": user.id,
-        "email": user.email,
+        "email": user.phone_number,
         "name": user.first_name,
-        "auth": authentication_token
+        "auth": authentication_token,
+        "admin": user.has_permission("firepot.admin")
     })
 
 
@@ -71,7 +77,10 @@ def register():
     user = User(first_name=first_name, last_name=last_name, email=email, password=password)
     user.save(commit=True)
 
-    authentication_token = encode_auth_token(user.id).decode("utf-8")
+    try:
+        authentication_token = encode_auth_token(user.id).decode("utf-8")
+    except:
+        authentication_token = encode_auth_token(user.id)
 
     return payload(messages.REGISTRATION_SUCCESSFUL, {
         'auth': authentication_token,

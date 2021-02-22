@@ -3,6 +3,20 @@ from uuid import uuid4
 from firepot.database import SurrogatePK, SqlModel, Column, relationship
 from firepot.extensions import db, hashing
 
+import logging
+
+LOGGER = logging.getLogger(__name__)
+
+class SetupRecord(SurrogatePK, SqlModel):
+    __tablename__ = "firepot_setup"
+
+    status = db.Column(db.Text, default="incomplete")
+
+    def __init__(self, status):
+        super().__init__(
+            status=status
+        )
+
 
 class OrderItem(SurrogatePK, SqlModel):
     __tablename__ = "order_items"
@@ -74,6 +88,9 @@ class CartItem(SqlModel):
 
 
 class Image(SurrogatePK, SqlModel):
+    """
+    Images are used on items for display.
+    """
     __tablename__ = "image"
 
     name = db.Column(db.Text, unique=True)
@@ -148,6 +165,9 @@ item_tags_table = db.Table(
 
 
 class Item(SurrogatePK, SqlModel):
+    """
+    Items are the stock of the website.
+    """
     __tablename__ = "item"
 
     name = db.Column(db.Text)
@@ -255,9 +275,10 @@ class User(SurrogatePK, SqlModel):
     last_name = Column(db.Text, nullable=False)  # Users name - used for display, and when greeting them.
 
     email = Column(db.Text, nullable=False, unique=True)
+    phone_number = Column(db.Text, nullable=False, unique=True)
     password = Column(db.Text, nullable=False)
 
-    def __init__(self, first_name, last_name, email, password):
+    def __init__(self, first_name, last_name, email, phone_number, password):
         salt_code = str(uuid4()).strip('-')  # generated saltcode
         hashed_password = hashing.hash_value(password, salt_code)
 
@@ -265,6 +286,7 @@ class User(SurrogatePK, SqlModel):
             first_name=first_name,
             last_name=last_name,
             email=email,
+            phone_number=phone_number,
             password=hashed_password,
             salt_code=salt_code
         )
@@ -276,13 +298,20 @@ class User(SurrogatePK, SqlModel):
         return hashing.check_value(self.password, password, self.salt_code)
 
     def has_permission(self, node):
-        for perm in self.permissions:
-            if perm.permission.node != node:
-                continue
 
-            return True
+        perm_node = Permission.query.filter_by(node=node).first()
 
-        return False
+        if perm_node is None:
+            LOGGER.debug("unable to locate requested node {0}".format(node))
+            return False
+
+        user_node = UserPermission.query.filter_by(user_id=self.id, permission_id=perm_node.id).first()
+
+        if user_node is None:
+            LOGGER.debug("User doesn't have node {0}".format(node))
+            return False
+
+        return True
 
     def add_permission(self, node):
         perm_node = Permission.query.filter_by(node=node).first()
@@ -293,6 +322,8 @@ class User(SurrogatePK, SqlModel):
 
         new_user_perm = UserPermission(user=self, permission=perm_node)
         new_user_perm.save(commit=True)
+
+        self.save(commit=True)
 
         return self.has_permission(node)
 

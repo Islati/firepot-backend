@@ -88,6 +88,7 @@ def configure_extensions(app):
         LOGGER.debug("Attempting to create database tables")
         db.create_all(app=app)
         LOGGER.debug("Created database tabled")
+
     except Exception as e:
         LOGGER.debug("Exception with db.create_all() - Duplicates??")
 
@@ -126,4 +127,33 @@ def create_app(config_override=None, testing=False):
     configure_extensions(app)
 
     LOGGER.debug("Registered extensions")
+
+    if not is_setup_finalized(app=app):
+
+        with app.app_context():
+            # Create Permissions.
+            from firepot.models import Permission, User, SetupRecord
+
+            admin_permission = Permission(node="firepot.admin")
+            admin_permission.save(commit=True)
+
+            admin_user = User("Brandon", "Curtis", "admin@firepot.ca", "7095369785", "testing1")
+            admin_user.save(commit=True)
+            admin_user.add_permission("firepot.admin")
+            admin_user.save(commit=True)
+
+            setup_record = SetupRecord(status="setup")
+            setup_record.save(commit=True)
     return app
+
+
+def is_setup_finalized(app):
+    from firepot.models import SetupRecord
+
+    with app.app_context():
+        record = SetupRecord.get_by_id(1)
+
+        if record is None:
+            return False
+
+        return record.status != "incomplete"
