@@ -278,7 +278,9 @@ class User(SurrogatePK, SqlModel):
     phone_number = Column(db.Text, nullable=False, unique=True)
     password = Column(db.Text, nullable=False)
 
-    def __init__(self, first_name, last_name, email, phone_number, password):
+    birth_date = Column(db.DateTime,nullable=False)
+
+    def __init__(self, first_name, last_name, email, phone_number, password,birth_date):
         salt_code = str(uuid4()).strip('-')  # generated saltcode
         hashed_password = hashing.hash_value(password, salt_code)
 
@@ -288,7 +290,8 @@ class User(SurrogatePK, SqlModel):
             email=email,
             phone_number=phone_number,
             password=hashed_password,
-            salt_code=salt_code
+            salt_code=salt_code,
+            birth_date=birth_date
         )
 
     def set_password(self, password):

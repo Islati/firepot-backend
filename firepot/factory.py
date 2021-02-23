@@ -129,15 +129,17 @@ def create_app(config_override=None, testing=False):
     LOGGER.debug("Registered extensions")
 
     if not is_setup_finalized(app=app):
-
         with app.app_context():
             # Create Permissions.
             from firepot.models import Permission, User, SetupRecord
 
-            admin_permission = Permission(node="firepot.admin")
+            admin_permission = Permission.get_or_create(node="firepot.admin")
             admin_permission.save(commit=True)
 
-            admin_user = User("Brandon", "Curtis", "admin@firepot.ca", "7095369785", "testing1")
+            import datetime
+            admin_user = User(first_name="Brandon", last_name="Curtis", email="admin@firepot.ca",
+                              phone_number="7095369785", password="testing1",
+                              birth_date=datetime.datetime.fromisoformat("1995-01-13"))
             admin_user.save(commit=True)
             admin_user.add_permission("firepot.admin")
             admin_user.save(commit=True)
