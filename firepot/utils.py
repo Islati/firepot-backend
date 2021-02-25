@@ -11,6 +11,7 @@ import math
 
 from firepot.config import Config
 from firepot.models import User
+from firepot import permissions
 
 import base64
 
@@ -90,7 +91,7 @@ def admins_only(api_method):
                 'message': 'Unable to identify user'
             }), 401
 
-        if not user.has_permission('firepot.administration'):
+        if not user.has_permission(permissions.ADMIN_PERMS):
             LOGGER.debug("Admin Only:: Insufficient Permissions")
             return jsonify({
                 'status': 'error',

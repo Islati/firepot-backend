@@ -39,9 +39,9 @@ def store_products():
 
             items_map[item_id]['products'].append(product.to_dict())
 
-        return payload(msg="Store Products List", payload={
-            'items': items_map
-        })
+    return payload(msg="Store Products List", payload={
+        'items': items_map
+    })
 
 
 @store_blueprint.route("/item/<itemid>", methods=["GET"])

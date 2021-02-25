@@ -15,6 +15,8 @@ import glob
 import json
 from logging.handlers import RotatingFileHandler
 
+from firepot.models import Item
+
 LOGGER = logging.getLogger(__name__)
 
 
@@ -132,6 +134,7 @@ def create_app(config_override=None, testing=False):
         with app.app_context():
             # Create Permissions.
             from firepot.models import Permission, User, SetupRecord
+            from firepot import permissions
 
             admin_permission = Permission.get_or_create(node="firepot.admin")
             admin_permission.save(commit=True)
@@ -141,11 +144,20 @@ def create_app(config_override=None, testing=False):
                               phone_number="7095369785", password="testing1",
                               birth_date=datetime.datetime.fromisoformat("1995-01-13"))
             admin_user.save(commit=True)
-            admin_user.add_permission("firepot.admin")
+            admin_user.add_permission(permissions.ADMIN_PERMS)
             admin_user.save(commit=True)
 
             setup_record = SetupRecord(status="setup")
             setup_record.save(commit=True)
+
+    @app.after_request
+    def after_request(response):
+        response.headers.add('Access-Control-Allow-Origin', '*')
+        response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
+        response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
+        LOGGER.info("Updated response headers with after request")
+        return response
+
     return app
 
 

@@ -178,7 +178,7 @@ class Item(SurrogatePK, SqlModel):
     tags = relationship('Tag', backref=db.backref("tag", lazy="joined"), lazy=True, uselist=True,
                         secondary=item_tags_table)
 
-    stock = db.Column(db.Integer, nullable=True, default=0)
+    stock = db.Column(db.Numeric, nullable=True, default=0)
 
     products = relationship("Product", back_populates="item", lazy="dynamic", uselist=True)
 
@@ -199,7 +199,8 @@ class Item(SurrogatePK, SqlModel):
             description=self.description,
             cover_image_id=self.cover_image_id,
             images=[img.to_dict() for img in self.images],
-            tags=[tag.to_dict() for tag in self.tags]
+            tags=[tag.to_dict() for tag in self.tags],
+            products=[product.to_dict() for product in self.products]
         )
 
 

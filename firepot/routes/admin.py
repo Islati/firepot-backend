@@ -1,4 +1,5 @@
 from flask import Blueprint, request
+from flask_cors import cross_origin
 
 from firepot import messages
 from firepot.models import Item, Product, Tag, Image
@@ -12,6 +13,21 @@ admin_blueprint = Blueprint(__name__, "admin", url_prefix="/admin")
 def index():
     return status_message(msg="Welcome")
 
+
+@admins_only
+@admin_blueprint.route('/inventory/delete/', methods=['POST'])
+def delete_item():
+    _json = request.get_json()
+
+    item_id = _json['id']
+
+    item = Item.query.filter_by(id=int(item_id)).first()
+
+    if item is None:
+        return status_message(msg="Unable to find item with id {0}".format(item_id), status="error")
+
+    item.delete(commit=True)
+    return payload(msg="Item Deleted", payload={})
 
 @admin_blueprint.route('/images/save', methods=['POST'])
 @admins_only
@@ -34,6 +50,21 @@ def images_save():
     return payload("Image saved", payload=dict(image_id=image.id))
 
 
+@admin_blueprint.route('/inventory/list/', methods=['GET'])
+@admins_only
+def list_inventory_items():
+    _json = request.get_json()
+
+    items = Item.query.all()
+
+    item_data = []
+
+    for item in items:
+        item_data.append(item.to_dict())
+
+    return payload(msg="Inventory Listings", payload=item_data)
+
+
 @admin_blueprint.route('/inventory/new/', methods=['POST'])
 @admins_only
 def new_inventory_item():
@@ -44,7 +75,11 @@ def new_inventory_item():
     cover_image_name = _json['cover_image_name']
     cover_image_data = _json['cover_image_data']
 
+    stock = _json['stock']
+
     tags_list = _json['tags'].split(',')
+
+    products = _json['products']
 
     item = Item.query.filter_by(name=name).first()
 
@@ -74,8 +109,15 @@ def new_inventory_item():
     item_image = Image(name=cover_image_name, data=cover_image_data)
     item_image.save(commit=True)
 
-    item = Item(name=name, description=description, cover_image_id=item_image.id, images=[item_image], tags=tags)
+    item = Item(name=name, description=description, cover_image_id=item_image.id, images=[item_image], tags=tags,
+                stock=int(stock))
     item.save(commit=True)
+
+    for product in products:
+        item_product = Product(name=product['name'], item_id=item.id, cost=int(product['cost']),
+                               sale_cost=int(product['cost']),
+                               stock_weight=float(product['stock_weight']))
+        item_product.save(commit=True)
 
     return payload(msg=messages.ITEM_CREATED, payload={
         'item': item.to_dict()
