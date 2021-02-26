@@ -13,12 +13,11 @@ admin_blueprint = Blueprint(__name__, "admin", url_prefix="/admin")
 def index():
     return status_message(msg="Welcome")
 
-
 @admins_only
-@admin_blueprint.route('/inventory/delete/', methods=['POST'])
+@cross_origin
+@admin_blueprint.route('/inventory/delete-item/', methods=['POST'])
 def delete_item():
     _json = request.get_json()
-
     item_id = _json['id']
 
     item = Item.query.filter_by(id=int(item_id)).first()
@@ -27,7 +26,27 @@ def delete_item():
         return status_message(msg="Unable to find item with id {0}".format(item_id), status="error")
 
     item.delete(commit=True)
-    return payload(msg="Item Deleted", payload={})
+    return payload(msg="Item Deleted", payload={
+        'id': item_id
+    })
+
+
+@admins_only
+@admin_blueprint.route('/inventory/delete-product/', methods=['POST'])
+def delete_product():
+    _json = request.get_json()
+    product_id = _json['id']
+
+    item = Product.query.filter_by(id=int(product_id)).first()
+
+    if item is None:
+        return status_message(msg="Unable to find product with id {0}".format(product_id), status="error")
+
+    item.delete(commit=True)
+    return payload(msg=messages.PRODUCT_DELETED, payload={
+        'id': product_id
+    })
+
 
 @admin_blueprint.route('/images/save', methods=['POST'])
 @admins_only
@@ -47,7 +66,7 @@ def images_save():
     image = Image(name=name, data=data)
     image.save(commit=True)
 
-    return payload("Image saved", payload=dict(image_id=image.id))
+    return payload(messages.IMAGE_SAVED, payload=dict(image_id=image.id))
 
 
 @admin_blueprint.route('/inventory/list/', methods=['GET'])
@@ -62,7 +81,7 @@ def list_inventory_items():
     for item in items:
         item_data.append(item.to_dict())
 
-    return payload(msg="Inventory Listings", payload=item_data)
+    return payload(msg=messages.INVENTORY_LISTINGS, payload=item_data)
 
 
 @admin_blueprint.route('/inventory/new/', methods=['POST'])

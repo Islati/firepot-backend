@@ -150,13 +150,13 @@ def create_app(config_override=None, testing=False):
             setup_record = SetupRecord(status="setup")
             setup_record.save(commit=True)
 
-    @app.after_request
-    def after_request(response):
-        response.headers.add('Access-Control-Allow-Origin', '*')
-        response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
-        response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
-        LOGGER.info("Updated response headers with after request")
-        return response
+    # @app.after_request
+    # def after_request(response):
+    #     response.headers.add('Access-Control-Allow-Origin', '*')
+    #     response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
+    #     response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
+    #     LOGGER.info("Updated response headers with after request")
+    #     return response
 
     return app
 

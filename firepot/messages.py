@@ -16,3 +16,8 @@ DUPLICATE_ITEM_NAME="An item with this name already exists"
 ITEM_CREATED = "Item created"
 INVALID_ITEM_ID = "No item with id {0}"
 PRODUCT_CREATED = "Product created!"
+
+INVENTORY_LISTINGS = "Inventory Listings"
+IMAGE_SAVED = "Image Saved"
+
+PRODUCT_DELETED = "Product Deleted"
